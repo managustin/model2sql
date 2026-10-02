@@ -179,3 +179,49 @@ Tipo incompatible en FK: 'rol_id' (string) no coincide con 'Rol.id' (int)
 ## Resultado esperado
 
 El proyecto proporciona una herramienta de consola capaz de recibir un archivo `.model` y producir un archivo `.sql` equivalente o informar errores léxicos, sintácticos o semánticos con información de línea y columna.
+
+## Desarrollo
+
+Requiere Python 3.11 o superior. Funciona igual en Windows, Linux y macOS.
+
+Windows (PowerShell):
+
+```powershell
+py -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install -e ".[dev]"
+```
+
+Linux / macOS:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+```
+
+Uso y pruebas:
+
+```bash
+model2sql examples/usuarios.model -o salida.sql   # o: python -m model2sql ...
+pytest
+ruff check . && ruff format .
+```
+
+Estructura:
+
+```text
+src/model2sql/
+  tokens.py     tipos de token y palabras reservadas
+  lexer.py      texto -> tokens
+  parser.py     tokens -> AST (nodes.py)
+  symbols.py    tabla de símbolos
+  semantic.py   análisis semántico en dos pasadas
+  generator.py  AST -> SQL
+  pipeline.py   encadena las etapas
+  cli.py        interfaz de consola
+tests/casos/    casos válidos (.model + .sql) e inválidos (.model + .err)
+docs/           gramática, decisiones y pautas de código
+```
+
+Antes de contribuir, leer [docs/pautas.md](docs/pautas.md).

@@ -1,0 +1,3 @@
+model Pedido {
+    cliente_id int fk(Cliente.id)
+}

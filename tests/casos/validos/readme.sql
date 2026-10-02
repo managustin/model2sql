@@ -1,0 +1,13 @@
+CREATE TABLE Rol (
+    id SERIAL PRIMARY KEY,
+    nombre VARCHAR(255) UNIQUE NOT NULL
+);
+
+CREATE TABLE Usuario (
+    id SERIAL PRIMARY KEY,
+    nombre VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    edad INTEGER,
+    rol_id INTEGER NOT NULL,
+    FOREIGN KEY (rol_id) REFERENCES Rol(id)
+);
