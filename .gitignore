@@ -10,3 +10,4 @@ dist/
 *.sql.out
 .vscode/
 .idea/
+target/

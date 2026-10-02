@@ -182,46 +182,40 @@ El proyecto proporciona una herramienta de consola capaz de recibir un archivo `
 
 ## Desarrollo
 
-Requiere Python 3.11 o superior. Funciona igual en Windows, Linux y macOS.
+Hay dos versiones independientes del transpilador, con los mismos casos de prueba (`casos/`).
+Ambas funcionan en Windows, Linux y macOS.
 
-Windows (PowerShell):
+### Python (`python/`)
+
+Requiere Python 3.11+.
 
 ```powershell
-py -m venv .venv
-.venv\Scripts\Activate.ps1
+cd python
+py -m venv .venv                 # Linux/macOS: python3 -m venv .venv
+.venv\Scripts\Activate.ps1       # Linux/macOS: source .venv/bin/activate
 pip install -e ".[dev]"
-```
-
-Linux / macOS:
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -e ".[dev]"
-```
-
-Uso y pruebas:
-
-```bash
-model2sql examples/usuarios.model -o salida.sql   # o: python -m model2sql ...
 pytest
-ruff check . && ruff format .
+model2sql ../ejemplos/usuarios.model -o salida.sql
 ```
 
-Estructura:
+### Java (`java/`)
+
+Requiere JDK 21. Maven no hace falta: lo descarga `mvnw`.
+
+```powershell
+cd java
+.\mvnw.cmd package              # Linux/macOS: ./mvnw package
+java -jar target/model2sql.jar ../ejemplos/usuarios.model -o salida.sql
+```
+
+### Estructura
 
 ```text
-src/model2sql/
-  tokens.py     tipos de token y palabras reservadas
-  lexer.py      texto -> tokens
-  parser.py     tokens -> AST (nodes.py)
-  symbols.py    tabla de símbolos
-  semantic.py   análisis semántico en dos pasadas
-  generator.py  AST -> SQL
-  pipeline.py   encadena las etapas
-  cli.py        interfaz de consola
-tests/casos/    casos válidos (.model + .sql) e inválidos (.model + .err)
-docs/           gramática, decisiones y pautas de código
+casos/        casos válidos (.model + .sql) e inválidos (.model + .err), compartidos
+ejemplos/     archivos .model de ejemplo
+docs/         gramática, decisiones y pautas de código
+python/src/model2sql/   tokens, lexico, sintactico, nodos, simbolos, semantico, generador, transpilador, cli
+java/src/main/java/model2sql/   lexico/, sintaxis/ (ast/), semantica/, generacion/, errores/, Transpilador, Principal
 ```
 
 Antes de contribuir, leer [docs/pautas.md](docs/pautas.md).
