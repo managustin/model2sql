@@ -1,0 +1,13 @@
+// Ejemplo del README
+model Rol {
+    id int pk auto_increment
+    nombre string unique not_null
+}
+
+model Usuario {
+    id int pk auto_increment
+    nombre string not_null
+    email string unique not_null
+    edad int
+    rol_id int not_null fk(Rol.id)
+}
