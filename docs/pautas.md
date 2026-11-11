@@ -1,6 +1,22 @@
 # Pautas de código
 
-Aplican a las dos versiones (`python/` y `java/`). Lo que no esté acá lo decide el linter o el compilador.
+La implementación oficial es C con Flex/Bison y sus pautas se describen primero. La sección
+«Prototipos Python y Java» se conserva solo como referencia para esos prototipos incompletos,
+que no forman parte de la entrega ejecutable.
+
+## Implementación oficial en C
+
+- `c/src/lexer.l` y `c/src/parser.y` son las fuentes del scanner y el parser; los archivos
+  generados y el ejecutable viven en `build/` y no se editan manualmente.
+- El AST y sus reglas de propiedad/liberación están en `c/include/ast.h` y `c/src/ast.c`.
+- Cada etapa recibe los tipos definidos por la anterior; solo `main.c` coordina el pipeline
+  y la entrada/salida de la CLI.
+- Los errores se registran con etapa y posición; las etapas no imprimen diagnósticos.
+- Los nombres y mensajes propios del proyecto se escriben en español.
+- La generación del parser, scanner y ejecutable se realiza mediante el Makefile raíz.
+- Antes de entregar, ejecutar `make clean && make test`.
+
+## Prototipos Python y Java
 
 ## Estructura
 
@@ -33,16 +49,14 @@ Aplican a las dos versiones (`python/` y `java/`). Lo que no esté acá lo decid
 
 ## Pruebas
 
-- Los casos de punta a punta están en `casos/` y los usan ambas versiones:
+- Los casos de punta a punta están en `casos/` y los ejecuta la implementación oficial con `make test`:
   `validos/x.model` + `x.sql`, o `invalidos/x.model` + `x.err` (mensaje exacto).
-- Pruebas unitarias por etapa, estilo preparar / ejecutar / verificar.
-- Cada error semántico del README tiene al menos un caso inválido.
+- Cada error semántico documentado tiene al menos un caso inválido.
 
 ## Antes de subir
 
 ```
-cd python && ruff check . && ruff format . && pytest
-cd java && ./mvnw test        # Windows: mvnw.cmd test
+make clean && make test
 ```
 
 Commits chicos, en imperativo y en español: `Agrega validación de PK duplicada`.

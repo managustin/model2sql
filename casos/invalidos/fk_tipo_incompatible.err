@@ -1,0 +1,2 @@
+Error semántico en línea 6, columna 20:
+Tipo incompatible en FK: 'cliente_id' (int) no coincide con 'Cliente.codigo' (string)

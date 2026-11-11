@@ -1,0 +1,2 @@
+Error semántico en línea 6, columna 20:
+El atributo 'codigo' referenciado en la FK no existe en 'Cliente'

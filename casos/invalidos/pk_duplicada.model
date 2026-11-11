@@ -1,0 +1,4 @@
+model Cliente {
+    id int pk
+    codigo int pk
+}

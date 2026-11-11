@@ -1,0 +1,4 @@
+CREATE TABLE Etiqueta (
+    id SERIAL PRIMARY KEY,
+    nombre VARCHAR(255) UNIQUE NOT NULL
+);

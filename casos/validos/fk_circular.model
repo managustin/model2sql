@@ -1,0 +1,9 @@
+model Categoria {
+    id int pk
+    elemento_id int fk(Elemento.id)
+}
+
+model Elemento {
+    id int pk
+    categoria_id int fk(Categoria.id)
+}

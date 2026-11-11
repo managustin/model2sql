@@ -1,6 +1,6 @@
 # Gramática
 
-Fuente de verdad del lenguaje. Si cambia la gramática, se cambia primero acá y después el parser.
+Fuente de verdad del lenguaje. Si cambia la gramática, se cambia primero acá y después el parser Bison.
 
 ```ebnf
 schema     = { model } EOF ;
@@ -24,6 +24,18 @@ comment    = "//" { any char except newline } ;
 - Espacios, tabs, saltos de línea y comentarios se descartan.
 - Los saltos de línea no son significativos: un atributo termina cuando aparece un `IDENT`
   (empieza el siguiente) o `}`.
+
+## Reglas semánticas
+
+- Los nombres de modelos y atributos son únicos dentro de su ámbito.
+- Un modelo debe declarar al menos un atributo y como máximo una clave primaria.
+- `auto_increment` solo se admite en atributos de tipo `int`.
+- Una FK debe referenciar un modelo y un atributo existentes.
+- El tipo del atributo local debe coincidir con el tipo referenciado.
+- El atributo referenciado por una FK debe tener `pk` o `unique`, como requiere PostgreSQL.
+- Las referencias adelantadas son válidas; el generador emite sus restricciones con `ALTER TABLE`
+  después de crear las tablas.
+- El compilador informa el primer error léxico, sintáctico o semántico y agrega línea y columna.
 
 ## Traducción de tipos
 

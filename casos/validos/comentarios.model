@@ -1,0 +1,5 @@
+// Los comentarios y los espacios no alteran el esquema
+model Etiqueta {
+    id int pk auto_increment // clave primaria
+    nombre string unique not_null
+}

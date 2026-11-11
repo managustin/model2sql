@@ -1,0 +1,10 @@
+CREATE TABLE Hijo (
+    id INTEGER PRIMARY KEY,
+    padre_id INTEGER
+);
+
+CREATE TABLE Padre (
+    id SERIAL PRIMARY KEY
+);
+
+ALTER TABLE Hijo ADD FOREIGN KEY (padre_id) REFERENCES Padre(id);

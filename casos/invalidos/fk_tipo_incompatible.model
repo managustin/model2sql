@@ -1,0 +1,7 @@
+model Cliente {
+    codigo string pk
+}
+
+model Pedido {
+    cliente_id int fk(Cliente.codigo)
+}

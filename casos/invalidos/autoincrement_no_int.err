@@ -1,0 +1,2 @@
+Error semántico en línea 2, columna 5:
+El atributo 'codigo' con auto_increment debe ser de tipo int

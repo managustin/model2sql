@@ -1,0 +1,184 @@
+\documentclass[runningheads]{llncs}
+
+\usepackage[spanish]{babel}
+\usepackage{url}
+
+\renewcommand{\andname}{y}
+\renewcommand{\lastandname}{ y}
+\renewcommand{\keywordname}{{\bfseries Palabras clave:}}
+
+\begin{document}
+
+\title{Transpilador-Model-SQL: un transpilador de modelos relacionales a SQL}
+\author{Alan Zschach\inst{1} \and Agustín Mango\inst{1} \and
+Zahira Alves\inst{1} \and Erick Ezequiel Kusczak\inst{1}}
+\authorrunning{A. Zschach y cols.}
+\institute{Universidad Gastón Dachary\\Compiladores 2026}
+\maketitle
+
+\begin{abstract}
+Transpilador-Model-SQL es un transpilador de un lenguaje específico de dominio (DSL) declarativo
+para describir esquemas relacionales. A partir de archivos de texto \texttt{.model},
+la herramienta verifica la estructura y las restricciones del esquema y genera
+sentencias de definición de datos (DDL) para PostgreSQL. El análisis léxico se
+implementa en C con Flex y el análisis sintáctico con Bison. El árbol de sintaxis
+abstracta resultante se valida semánticamente en dos pasadas y, si no hay errores,
+se traduce a SQL. El proyecto incluye diagnósticos con ubicación, una interfaz de
+línea de comandos, un Makefile que genera todos los componentes y escenarios de
+integración válidos e inválidos ejecutables con un único comando.
+
+\keywords{compiladores \and lenguajes específicos de dominio \and Flex \and Bison \and SQL}
+\end{abstract}
+
+\section{Introducción}
+
+La definición manual de esquemas relacionales mediante DDL requiere repetir
+estructuras y mantener consistentes tipos, claves y referencias. Transpilador-Model-SQL aborda
+ese problema con un lenguaje pequeño que expresa modelos, atributos y restricciones,
+y traduce las declaraciones a SQL. La herramienta automatiza la generación de
+\texttt{CREATE TABLE} y detecta errores antes de producir el resultado.
+
+El trabajo aplica las etapas habituales de un compilador: análisis léxico,
+análisis sintáctico, construcción de una representación intermedia, análisis
+semántico y generación de código \cite{aho}. La consigna requiere el uso de
+generadores de analizadores léxicos y sintácticos, por lo que la etapa de análisis
+se construye con Flex y Bison \cite{flex,bison}.
+
+\section{Antecedentes}
+
+Un compilador separa el reconocimiento de lexemas, la verificación de la
+estructura gramatical y la comprobación de restricciones que dependen del
+significado del programa. La separación permite reportar errores en la etapa
+correspondiente y evitar que la etapa de generación reciba un esquema inválido
+\cite{aho}.
+
+Flex genera un analizador léxico a partir de reglas basadas en expresiones
+regulares; Bison genera un analizador sintáctico a partir de una gramática libre
+de contexto \cite{flex,bison}. Transpilador-Model-SQL utiliza esas herramientas
+para convertir los elementos léxicos en un árbol de sintaxis abstracta. La etapa
+de generación produce DDL para PostgreSQL,
+cuyas restricciones determinan, entre otros aspectos, que las columnas
+referenciadas por claves foráneas sean claves primarias o únicas
+\cite{postgresql}.
+
+\section{Lenguaje fuente}
+
+El lenguaje fuente es declarativo. Una declaración comienza con la palabra
+reservada \texttt{model}, seguida del nombre del modelo y un bloque entre llaves.
+Dentro del bloque, cada atributo declara un nombre, un tipo y cero o más
+modificadores. Los tipos disponibles son \texttt{int}, \texttt{string},
+\texttt{float}, \texttt{boolean} y \texttt{date}. Los modificadores son
+\texttt{pk}, \texttt{unique}, \texttt{not\_null}, \texttt{auto\_increment} y
+\texttt{fk(Modelo.atributo)}.
+
+Los espacios, tabulaciones y saltos de línea separan lexemas, pero no delimitan
+atributos; los comentarios comienzan con \texttt{//}. La gramática completa se
+mantiene en \texttt{docs/gramatica.md}, junto con la correspondencia de tipos
+del DSL a PostgreSQL.
+
+\subsection{Reglas semánticas}
+
+Los nombres de modelos son únicos en el esquema y los atributos son únicos dentro
+de su modelo. Cada modelo debe tener al menos un atributo y puede declarar como
+máximo una clave primaria. El modificador \texttt{auto\_increment} requiere el
+tipo \texttt{int}.
+
+Una clave foránea debe referenciar un modelo y un atributo existentes. Los tipos
+del atributo local y del atributo referenciado deben coincidir, y el atributo
+referenciado debe ser \texttt{pk} o \texttt{unique}. El análisis de dos pasadas
+permite resolver referencias a modelos declarados más adelante.
+
+\section{Arquitectura e implementación}
+
+\subsection{Análisis léxico y sintáctico}
+
+El analizador léxico generado con Flex reconoce palabras reservadas, identificadores, signos de
+puntuación, espacios y comentarios. Cada token conserva su ubicación de origen.
+Los caracteres no reconocidos producen un error léxico con línea y columna.
+
+El analizador sintáctico generado con Bison aplica la gramática del DSL y
+construye el árbol de sintaxis abstracta: un esquema contiene modelos; cada modelo
+contiene atributos; cada atributo almacena su tipo, posición y modificadores.
+Ante una secuencia inválida, informa un error sintáctico con ubicación y el
+elemento inesperado.
+
+\subsection{Análisis semántico}
+
+El analizador semántico usa dos pasadas. La primera registra modelos y atributos
+en una tabla de símbolos y comprueba duplicados, cantidad de claves primarias,
+modelos vacíos y el uso de \texttt{auto\_increment}. La segunda resuelve cada
+referencia de clave foránea y comprueba existencia, unicidad y compatibilidad
+de tipos. Se informa el primer error y no se genera SQL cuando el esquema no
+supera la validación.
+
+\subsection{Generación de código y ejecución}
+
+El generador traduce los tipos a \texttt{INTEGER}, \texttt{VARCHAR(255)},
+\texttt{REAL}, \texttt{BOOLEAN} y \texttt{DATE}; \texttt{int} con
+\texttt{auto\_increment} se emite como \texttt{SERIAL}. Los modificadores se
+traducen a restricciones de clave primaria, unicidad y no nulidad.
+
+Las tablas se emiten en el orden de declaración. Las claves foráneas a tablas
+anteriores se incluyen en el \texttt{CREATE TABLE} correspondiente; las
+referencias adelantadas se agregan después mediante \texttt{ALTER TABLE}, una
+vez creadas todas las tablas. Esta estrategia conserva el orden fuente y permite
+generar DDL válido también para relaciones circulares.
+
+El Makefile es el punto de entrada de la compilación: genera el analizador
+sintáctico con Bison, el analizador léxico con Flex y el ejecutable
+\texttt{build/model2sql}. La interfaz de línea de comandos recibe un
+archivo \texttt{.model}; puede imprimir el SQL en la salida estándar o escribirlo
+en un archivo con \texttt{-o}.
+
+\section{Pruebas y resultados}
+
+Los escenarios compartidos de \texttt{casos/} se ejecutan con \texttt{make test}.
+El conjunto contiene cinco entradas válidas, que comprueban generación SQL,
+traducción de tipos, comentarios, referencias adelantadas y relaciones circulares,
+y once entradas inválidas que cubren errores léxicos, sintácticos y semánticos.
+Para cada caso se compara la salida o el diagnóstico completo con su archivo de referencia.
+La suite también verifica la opción de salida a archivo y errores básicos de uso
+y de lectura de archivos.
+
+La ejecución termina correctamente solo cuando todos los escenarios coinciden
+con sus resultados esperados. La herramienta no necesita un servidor de base
+de datos para las pruebas: estas validan el SQL producido y los diagnósticos,
+pero no ejecutan el DDL en una instancia PostgreSQL.
+
+\section{Conclusiones y trabajo futuro}
+
+Transpilador-Model-SQL demuestra una cadena de compilación completa para un
+lenguaje específico de dominio acotado: Flex y Bison implementan las etapas de
+análisis, el árbol de sintaxis abstracta separa sintaxis de semántica y la etapa
+de generación produce DDL de PostgreSQL. La tabla de símbolos y el análisis en dos
+pasadas habilitan validaciones de relaciones, incluso cuando hay referencias
+adelantadas. El Makefile y los casos compartidos simplifican la compilación y
+la demostración del funcionamiento.
+
+Como extensiones posibles se identifican soportar otros dialectos SQL, ampliar
+las restricciones disponibles y ejecutar las salidas en PostgreSQL como prueba
+adicional de integración.
+
+\begin{thebibliography}{8}
+
+\bibitem{aho}
+Aho, A.V., Lam, M.S., Sethi, R., Ullman, J.D.: Compilers: Principles,
+Techniques, and Tools, 2nd edn. Pearson (2006)
+
+\bibitem{flex}
+The Flex Project: Flex: The Fast Lexical Analyzer. Manual.
+\url{https://westes.github.io/flex/manual/}
+
+\bibitem{bison}
+Free Software Foundation: GNU Bison Manual.
+\url{https://www.gnu.org/software/bison/manual/}
+
+\bibitem{postgresql}
+PostgreSQL Global Development Group: PostgreSQL Documentation: Constraints
+and Data Types.
+\url{https://www.postgresql.org/docs/current/ddl-constraints.html};
+\url{https://www.postgresql.org/docs/current/datatype-numeric.html}
+
+\end{thebibliography}
+
+\end{document}

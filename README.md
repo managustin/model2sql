@@ -115,10 +115,15 @@ El analizador semántico comprueba:
 - atributos duplicados;
 - múltiples claves primarias en un mismo modelo;
 - existencia de modelos y atributos referenciados;
+- que el atributo referenciado por una FK sea `pk` o `unique`;
 - compatibilidad de tipos en claves foráneas;
+- que `auto_increment` se aplique a un atributo `int`;
+- que los modelos tengan al menos un atributo;
 - referencias entre modelos.
 
 Para permitir referencias adelantadas, el análisis se realiza en dos pasadas.
+Las claves foráneas que apuntan a un modelo declarado después se generan como
+`ALTER TABLE`, una vez creadas todas las tablas.
 
 ### Generación de código
 
@@ -146,22 +151,22 @@ Carácter inesperado
 ```
 
 ```text
-Error sintáctico en línea L:
-Se esperaba IDENTIFICADOR
+Error sintáctico en línea L, columna C:
+Token inesperado '}'
 ```
 
 ```text
-Error semántico:
+Error semántico en línea L, columna C:
 El atributo 'email' ya fue declarado en 'Usuario'
 ```
 
 ```text
-Error semántico:
+Error semántico en línea L, columna C:
 La tabla 'Cliente' referenciada en la FK no existe
 ```
 
 ```text
-Error semántico:
+Error semántico en línea L, columna C:
 Tipo incompatible en FK: 'rol_id' (string) no coincide con 'Rol.id' (int)
 ```
 
@@ -180,33 +185,52 @@ Tipo incompatible en FK: 'rol_id' (string) no coincide con 'Rol.id' (int)
 
 El proyecto proporciona una herramienta de consola capaz de recibir un archivo `.model` y producir un archivo `.sql` equivalente o informar errores léxicos, sintácticos o semánticos con información de línea y columna.
 
-## Desarrollo
+## Desarrollo y uso
 
-Hay dos versiones independientes del transpilador, con los mismos casos de prueba (`casos/`).
-Ambas funcionan en Windows, Linux y macOS.
+La implementación oficial está en C y utiliza Flex para generar el scanner y
+Bison para generar el parser. Python y Java se conservan como prototipos
+incompletos y no son necesarios para compilar ni usar la entrega.
 
-### Python (`python/`)
+### Requisitos
 
-Requiere Python 3.11+.
+- GCC o Clang, GNU Make, Flex y Bison.
+- En Windows, usar WSL 2 con Ubuntu (o un entorno equivalente que provea esas herramientas).
 
-```powershell
-cd python
-py -m venv .venv                 # Linux/macOS: python3 -m venv .venv
-.venv\Scripts\Activate.ps1       # Linux/macOS: source .venv/bin/activate
-pip install -e ".[dev]"
-pytest
-model2sql ../ejemplos/usuarios.model -o salida.sql
+En Ubuntu/WSL se pueden instalar con:
+
+```sh
+sudo apt update
+sudo apt install build-essential flex bison
 ```
 
-### Java (`java/`)
+Desde la raíz del repositorio:
 
-Requiere JDK 21. Maven no hace falta: lo descarga `mvnw`.
-
-```powershell
-cd java
-.\mvnw.cmd package              # Linux/macOS: ./mvnw package
-java -jar target/model2sql.jar ../ejemplos/usuarios.model -o salida.sql
+```sh
+make                 # genera parser, scanner y build/model2sql
+make test            # ejecuta todos los casos compartidos
+./build/model2sql ejemplos/usuarios.model -o salida.sql
+make clean           # elimina los artefactos generados
 ```
+
+Para imprimir el SQL en la terminal, se puede omitir `-o salida.sql`.
+La CLI devuelve código 0 si termina correctamente, 1 ante errores léxicos,
+sintácticos o semánticos, y 2 ante errores de uso o de archivos.
+
+`make test` compara el SQL y los diagnósticos completos con los archivos de
+referencia de `casos/`: actualmente hay cinco escenarios válidos y once inválidos.
+La salida conserva el orden de declaración de los modelos; las FK adelantadas
+se agregan al final con `ALTER TABLE`.
+
+El informe requerido está en `informe/informe.tex`. Para generar su PDF con XeLaTeX,
+ejecutar dos veces desde la raíz:
+
+```sh
+xelatex -interaction=nonstopmode -halt-on-error -output-directory=informe informe/informe.tex
+```
+
+El archivo resultante es `informe/informe.pdf`. La clase oficial `llncs` debe estar
+instalada por MiKTeX o provista por la cátedra/Springer. Antes de entregar, completar
+los datos reales de autoría e institución en la fuente.
 
 ### Estructura
 
@@ -214,8 +238,12 @@ java -jar target/model2sql.jar ../ejemplos/usuarios.model -o salida.sql
 casos/        casos válidos (.model + .sql) e inválidos (.model + .err), compartidos
 ejemplos/     archivos .model de ejemplo
 docs/         gramática, decisiones y pautas de código
-python/src/model2sql/   tokens, lexico, sintactico, nodos, simbolos, semantico, generador, transpilador, cli
-java/src/main/java/model2sql/   lexico/, sintaxis/ (ast/), semantica/, generacion/, errores/, Transpilador, Principal
+c/include/    interfaces del compilador, AST y etapas
+c/src/        implementación C, gramática Bison y reglas Flex
+scripts/      pruebas de integración invocadas por Makefile
+informe/      fuente del informe en formato LNCS
+funcionamiento.md explicación del funcionamiento, las pruebas y el uso
+python/, java/ prototipos incompletos, fuera de la entrega oficial
 ```
 
 Antes de contribuir, leer [docs/pautas.md](docs/pautas.md).

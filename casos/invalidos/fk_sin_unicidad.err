@@ -1,0 +1,2 @@
+Error semántico en línea 6, columna 20:
+El atributo 'id' de 'Cliente' debe ser pk o unique para usarse en una FK

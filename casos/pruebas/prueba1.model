@@ -1,0 +1,5 @@
+model Producto {
+    id int pk auto_increment
+    nombre string not_null
+    precio float
+}

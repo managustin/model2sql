@@ -1,0 +1,7 @@
+model Inventario {
+    cantidad int
+    etiqueta string
+    precio float
+    habilitado boolean
+    creado date
+}

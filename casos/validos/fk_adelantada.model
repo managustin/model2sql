@@ -1,0 +1,8 @@
+model Hijo {
+    id int pk
+    padre_id int fk(Padre.id)
+}
+
+model Padre {
+    id int pk auto_increment
+}
