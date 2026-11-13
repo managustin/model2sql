@@ -11,6 +11,7 @@
 static int linea_actual = 1;
 static int columna_actual = 1;
 
+/* Registra la ubicación inicial y final del token para errores posteriores del parser. */
 static void marcar_posicion(const char *texto, int longitud, YYLTYPE *ubicacion) {
     ubicacion->first_line = linea_actual;
     ubicacion->first_column = columna_actual;
@@ -33,6 +34,7 @@ IDENTIFICADOR [A-Za-z_][A-Za-z0-9_]*
 
 %%
 
+    /* Las palabras reservadas se evalúan antes que la regla general de identificadores. */
 "model"             return TOK_MODEL;
 "int"               return TOK_INT;
 "string"            return TOK_STRING;
@@ -46,6 +48,7 @@ IDENTIFICADOR [A-Za-z_][A-Za-z0-9_]*
 "fk"                return TOK_FK;
 
 {IDENTIFICADOR} {
+    /* Bison recibe una copia propia del lexema para incorporarlo al AST. */
     yylval.texto = malloc((size_t)yyleng + 1);
     if (yylval.texto == NULL) {
         fputs("Error interno:\nNo hay memoria suficiente\n", stderr);
@@ -64,6 +67,7 @@ IDENTIFICADOR [A-Za-z_][A-Za-z0-9_]*
 "//"[^\r\n]*    ;
 [ \t\f\r\n]+    ;
 
+    /* Cualquier carácter no reconocido detiene el análisis con un error léxico ubicado. */
 . {
     Posicion posicion = {yylloc.first_line, yylloc.first_column};
     unsigned char caracter = (unsigned char)yytext[0];

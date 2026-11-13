@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/* Ante falta de memoria se informa un error interno y se usa el código de salida de la CLI. */
 static void *reservar(size_t tamano) {
     void *memoria = malloc(tamano);
     if (memoria == NULL) {
@@ -13,10 +14,12 @@ static void *reservar(size_t tamano) {
 }
 
 Modificadores modificadores_vacios(void) {
+    /* El valor cero representa que ningún modificador fue declarado. */
     return (Modificadores){0};
 }
 
 Modificadores combinar_modificadores(Modificadores izquierdo, Modificadores derecho) {
+    /* Los indicadores se acumulan; una segunda FK se marca para reportarla semánticamente. */
     izquierdo.clave_primaria |= derecho.clave_primaria;
     izquierdo.unico |= derecho.unico;
     izquierdo.no_nulo |= derecho.no_nulo;
@@ -37,6 +40,7 @@ Modificadores combinar_modificadores(Modificadores izquierdo, Modificadores dere
 }
 
 ClaveForanea *crear_clave_foranea(char *modelo, char *atributo, Posicion posicion) {
+    /* Los nombres recibidos pasan a ser propiedad del nodo de clave foránea. */
     ClaveForanea *clave = reservar(sizeof(*clave));
     clave->modelo = modelo;
     clave->atributo = atributo;
@@ -46,6 +50,7 @@ ClaveForanea *crear_clave_foranea(char *modelo, char *atributo, Posicion posicio
 
 Atributo *crear_atributo(char *nombre, TipoPrimitivo tipo, Posicion posicion,
                          Modificadores modificadores) {
+    /* Inicializa el nodo aislado; agregar_atributo lo enlazará a la lista. */
     Atributo *atributo = reservar(sizeof(*atributo));
     atributo->nombre = nombre;
     atributo->tipo = tipo;
@@ -56,6 +61,7 @@ Atributo *crear_atributo(char *nombre, TipoPrimitivo tipo, Posicion posicion,
 }
 
 void agregar_atributo(ListaAtributos *lista, Atributo *atributo) {
+    /* El puntero al último evita recorrer la lista cada vez que el parser agrega un nodo. */
     if (lista->ultimo == NULL) {
         lista->primero = atributo;
     } else {
@@ -65,6 +71,7 @@ void agregar_atributo(ListaAtributos *lista, Atributo *atributo) {
 }
 
 Modelo *crear_modelo(char *nombre, Posicion posicion, ListaAtributos atributos) {
+    /* El modelo recibe la lista de atributos ya construida por el parser. */
     Modelo *modelo = reservar(sizeof(*modelo));
     modelo->nombre = nombre;
     modelo->posicion = posicion;
@@ -74,6 +81,7 @@ Modelo *crear_modelo(char *nombre, Posicion posicion, ListaAtributos atributos) 
 }
 
 void agregar_modelo(Esquema *esquema, Modelo *modelo) {
+    /* Conserva el orden de entrada, que también determina el orden del SQL generado. */
     if (esquema->ultimo == NULL) {
         esquema->primero = modelo;
     } else {
@@ -83,6 +91,7 @@ void agregar_modelo(Esquema *esquema, Modelo *modelo) {
 }
 
 void liberar_modificadores(Modificadores *modificadores) {
+    /* La FK es el único miembro dinámico del conjunto de modificadores. */
     if (modificadores->clave_foranea != NULL) {
         free(modificadores->clave_foranea->modelo);
         free(modificadores->clave_foranea->atributo);
@@ -92,6 +101,7 @@ void liberar_modificadores(Modificadores *modificadores) {
 }
 
 void liberar_atributos(ListaAtributos *atributos) {
+    /* Guarda el siguiente nodo antes de liberar el actual. */
     Atributo *actual = atributos->primero;
     while (actual != NULL) {
         Atributo *siguiente = actual->siguiente;
@@ -104,6 +114,7 @@ void liberar_atributos(ListaAtributos *atributos) {
 }
 
 void liberar_modelo(Modelo *modelo) {
+    /* Libera cada modelo y, dentro de él, los recursos de sus atributos. */
     while (modelo != NULL) {
         Modelo *siguiente = modelo->siguiente;
         free(modelo->nombre);
@@ -114,11 +125,13 @@ void liberar_modelo(Modelo *modelo) {
 }
 
 void liberar_esquema(Esquema *esquema) {
+    /* El esquema es dueño de toda la lista de modelos que cuelga de su raíz. */
     liberar_modelo(esquema->primero);
     *esquema = (Esquema){0};
 }
 
 const char *nombre_tipo(TipoPrimitivo tipo) {
+    /* Conversión legible usada especialmente para explicar incompatibilidades de FK. */
     switch (tipo) {
         case TIPO_INT:
             return "int";

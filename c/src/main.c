@@ -19,11 +19,13 @@ enum {
     SALIDA_USO_INCORRECTO = 2
 };
 
+/* Muestra las formas válidas de invocar la CLI. */
 static void mostrar_uso(FILE *salida) {
     fputs("Uso: model2sql archivo.model [-o archivo.sql]\n", salida);
 }
 
 static bool escribir_archivo(const char *ruta, const char *contenido) {
+    /* Escribe todo el SQL y comprueba tanto la escritura como el cierre del archivo. */
     FILE *archivo = fopen(ruta, "w");
     if (archivo == NULL) {
         fprintf(stderr, "No se pudo escribir '%s': %s\n", ruta, strerror(errno));
@@ -43,6 +45,7 @@ static bool escribir_archivo(const char *ruta, const char *contenido) {
 }
 
 int main(int cantidad_argumentos, char **argumentos) {
+    /* Primero interpreta opciones y determina una ruta de entrada y otra opcional de salida. */
     const char *ruta_entrada = NULL;
     const char *ruta_salida = NULL;
     for (int indice = 1; indice < cantidad_argumentos; indice++) {
@@ -71,6 +74,7 @@ int main(int cantidad_argumentos, char **argumentos) {
         return SALIDA_USO_INCORRECTO;
     }
 
+    /* Abre la entrada y conecta Flex/Bison al estado de esta compilación. */
     FILE *entrada = fopen(ruta_entrada, "r");
     if (entrada == NULL) {
         fprintf(stderr, "No se pudo leer '%s': %s\n", ruta_entrada, strerror(errno));
@@ -81,6 +85,7 @@ int main(int cantidad_argumentos, char **argumentos) {
     compilacion_actual = &estado;
     yyin = entrada;
     yyrestart(entrada);
+    /* El parser construye el AST; se liberan los recursos del scanner tras leer el archivo. */
     int resultado_parser = yyparse();
     int error_lectura = ferror(entrada);
     if (fclose(entrada) != 0) {
@@ -88,11 +93,13 @@ int main(int cantidad_argumentos, char **argumentos) {
     }
     yylex_destroy();
 
+    /* Un fallo de lectura prevalece sobre errores de sintaxis por entrada incompleta. */
     if (error_lectura) {
         fprintf(stderr, "No se pudo leer '%s'\n", ruta_entrada);
         liberar_esquema(&estado.esquema);
         return SALIDA_ERROR_ARCHIVO;
     }
+    /* Solo se continúa cuando el archivo completo pudo convertirse en un AST válido. */
     if (resultado_parser != 0 || estado.error.tipo != ERROR_NINGUNO) {
         if (estado.error.tipo == ERROR_NINGUNO) {
             Posicion posicion = {1, 1};
@@ -103,12 +110,14 @@ int main(int cantidad_argumentos, char **argumentos) {
         liberar_esquema(&estado.esquema);
         return SALIDA_ERROR_COMPILACION;
     }
+    /* El SQL se genera únicamente después de validar nombres y relaciones. */
     if (!analizar_semantica(&estado.esquema)) {
         imprimir_error(&estado.error);
         liberar_esquema(&estado.esquema);
         return SALIDA_ERROR_COMPILACION;
     }
 
+    /* Genera el SQL, lo envía a stdout o a -o, y libera todos los recursos propios. */
     char *sql = generar_sql(&estado.esquema);
     bool correcto = ruta_salida == NULL
                         ? (fputs(sql, stdout) != EOF && fputc('\n', stdout) != EOF)

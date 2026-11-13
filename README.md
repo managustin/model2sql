@@ -187,9 +187,8 @@ El proyecto proporciona una herramienta de consola capaz de recibir un archivo `
 
 ## Desarrollo y uso
 
-La implementación oficial está en C y utiliza Flex para generar el scanner y
-Bison para generar el parser. Python y Java se conservan como prototipos
-incompletos y no son necesarios para compilar ni usar la entrega.
+La implementación está en C y utiliza Flex para generar el scanner y Bison
+para generar el parser.
 
 ### Requisitos
 
@@ -229,12 +228,11 @@ mantienen fuera de GitHub.
 ```text
 casos/        casos válidos (.model + .sql) e inválidos (.model + .err), compartidos
 ejemplos/     archivos .model de ejemplo
-docs/         gramática, decisiones y pautas de código
+docs/         gramática del lenguaje
 c/include/    interfaces del compilador, AST y etapas
 c/src/        implementación C, gramática Bison y reglas Flex
 scripts/      pruebas de integración invocadas por Makefile
 funcionamiento.md explicación del funcionamiento, las pruebas y el uso
-python/, java/ prototipos incompletos, fuera de la entrega oficial
 ```
 
-Antes de contribuir, leer [docs/pautas.md](docs/pautas.md).
+La gramática está documentada en [docs/gramatica.md](docs/gramatica.md).

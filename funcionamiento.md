@@ -3,9 +3,7 @@
 ## Alcance e implementación
 
 Model2SQL transpila archivos `.model` a SQL DDL para PostgreSQL. La implementación
-oficial está escrita en C: Flex genera el scanner y Bison genera el parser. Las
-carpetas `python/` y `java/` se conservan como prototipos incompletos y no se usan
-para compilar ni ejecutar la entrega.
+está escrita en C: Flex genera el scanner y Bison genera el parser.
 
 El pipeline es:
 
