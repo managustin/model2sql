@@ -221,16 +221,8 @@ referencia de `casos/`: actualmente hay cinco escenarios válidos y once inváli
 La salida conserva el orden de declaración de los modelos; las FK adelantadas
 se agregan al final con `ALTER TABLE`.
 
-El informe requerido está en `informe/informe.tex`. Para generar su PDF con XeLaTeX,
-ejecutar dos veces desde la raíz:
-
-```sh
-xelatex -interaction=nonstopmode -halt-on-error -output-directory=informe informe/informe.tex
-```
-
-El archivo resultante es `informe/informe.pdf`. La clase oficial `llncs` debe estar
-instalada por MiKTeX o provista por la cátedra/Springer. Antes de entregar, completar
-los datos reales de autoría e institución en la fuente.
+El informe no forma parte de este repositorio; su fuente y materiales de entrega se
+mantienen fuera de GitHub.
 
 ### Estructura
 
@@ -241,7 +233,6 @@ docs/         gramática, decisiones y pautas de código
 c/include/    interfaces del compilador, AST y etapas
 c/src/        implementación C, gramática Bison y reglas Flex
 scripts/      pruebas de integración invocadas por Makefile
-informe/      fuente del informe en formato LNCS
 funcionamiento.md explicación del funcionamiento, las pruebas y el uso
 python/, java/ prototipos incompletos, fuera de la entrega oficial
 ```

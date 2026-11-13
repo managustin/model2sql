@@ -120,14 +120,3 @@ parser, scanner y ejecutable generados:
 make clean
 ```
 
-## Informe
-
-El informe LNCS está en [informe/informe.tex](./informe/informe.tex). Con XeLaTeX
-instalado y la clase `llncs` disponible, desde la raíz ejecuta dos veces:
-
-```sh
-xelatex -interaction=nonstopmode -halt-on-error -output-directory=informe informe/informe.tex
-```
-
-El PDF queda en `informe/informe.pdf`. Antes de entregar, completar los datos reales
-de autores e institución en la fuente.
