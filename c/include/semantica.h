@@ -3,7 +3,6 @@
 
 #include "compilacion.h"
 
-/* Comprueba nombres, modificadores y referencias antes de permitir generar SQL. */
 bool analizar_semantica(const Esquema *esquema);
 
 #endif

@@ -9,7 +9,6 @@ int yylex(void);
 void yyerror(const char *mensaje);
 
 static void traducir_error_sintactico(const char *mensaje, char *salida, size_t capacidad) {
-    /* Bison produce el diagnóstico en inglés; se extraen token inesperado y esperados. */
     const char *inesperado = strstr(mensaje, "unexpected ");
     if (inesperado == NULL) {
         snprintf(salida, capacidad, "La entrada no respeta la gramática del DSL");
@@ -30,7 +29,6 @@ static void traducir_error_sintactico(const char *mensaje, char *salida, size_t 
     esperado += strlen(", expecting ");
     char lista_esperada[512];
     size_t posicion_salida = 0;
-    /* Convierte el separador inglés "or" para mostrar una lista legible en español. */
     while (*esperado != '\0' && posicion_salida + 1 < sizeof(lista_esperada)) {
         if (strncmp(esperado, " or ", 4) == 0) {
             if (posicion_salida + 3 >= sizeof(lista_esperada)) {
@@ -58,7 +56,6 @@ static void traducir_error_sintactico(const char *mensaje, char *salida, size_t 
 %locations
 
 %union {
-    /* Valores semánticos que las producciones del parser transportan entre reglas. */
     char *texto;
     TipoPrimitivo tipo;
     Modificadores modificadores;
@@ -95,7 +92,6 @@ static void traducir_error_sintactico(const char *mensaje, char *salida, size_t 
 
 %%
 
-/* La entrada admite cero o más modelos y los agrega a la raíz del AST. */
 entrada:
     %empty
   | entrada modelo
@@ -105,7 +101,6 @@ entrada:
 ;
 
 modelo:
-    /* Un modelo agrupa su nombre y la lista de atributos entre llaves. */
     TOK_MODEL IDENTIFICADOR '{' atributos '}'
     {
         Posicion posicion = {@1.first_line, @1.first_column};
@@ -114,7 +109,6 @@ modelo:
 ;
 
 atributos:
-    /* La lista puede estar vacía; el análisis semántico la rechazará después. */
     %empty
     {
         $$ = (ListaAtributos){0};
@@ -127,7 +121,6 @@ atributos:
 ;
 
 atributo:
-    /* Cada atributo comienza con nombre y tipo, seguido de cero o más modificadores. */
     IDENTIFICADOR tipo modificadores
     {
         Posicion posicion = {@1.first_line, @1.first_column};
@@ -136,7 +129,6 @@ atributo:
 ;
 
 tipo:
-    /* Correspondencia directa entre tokens reservados y tipos internos del AST. */
     TOK_INT       { $$ = TIPO_INT; }
   | TOK_STRING    { $$ = TIPO_STRING; }
   | TOK_FLOAT     { $$ = TIPO_FLOAT; }
@@ -145,7 +137,6 @@ tipo:
 ;
 
 modificadores:
-    /* Se acumulan modificadores sin depender de un orden específico en el archivo. */
     %empty
     {
         $$ = modificadores_vacios();
@@ -157,7 +148,6 @@ modificadores:
 ;
 
 modificador:
-    /* Las propiedades simples activan una bandera en la estructura de modificadores. */
     TOK_PK
     {
         $$ = modificadores_vacios();
@@ -180,7 +170,6 @@ modificador:
     }
   | TOK_FK '(' IDENTIFICADOR '.' IDENTIFICADOR ')'
     {
-        /* La FK conserva el nombre de tabla, columna y ubicación para validarla luego. */
         Posicion posicion = {@1.first_line, @1.first_column};
         $$ = modificadores_vacios();
         $$.clave_foranea = crear_clave_foranea($3, $5, posicion);
@@ -190,7 +179,6 @@ modificador:
 %%
 
 void yyerror(const char *mensaje) {
-    /* Bison informa la ubicación actual; el mensaje se normaliza al formato del proyecto. */
     Posicion posicion = {yylloc.first_line, yylloc.first_column};
     char mensaje_espanol[768];
     traducir_error_sintactico(mensaje, mensaje_espanol, sizeof(mensaje_espanol));
