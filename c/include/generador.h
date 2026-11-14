@@ -3,7 +3,6 @@
 
 #include "ast.h"
 
-/* Convierte un AST ya validado en SQL asignado dinámicamente; quien llama lo libera. */
 char *generar_sql(const Esquema *esquema);
 
 #endif

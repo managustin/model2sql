@@ -4,20 +4,17 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* Cada entrada apunta al modelo del AST y guarda sus atributos para búsquedas rápidas. */
 typedef struct {
     Modelo *modelo;
     Atributo **atributos;
     size_t cantidad_atributos;
 } SimboloModelo;
 
-/* Tabla temporal que permite resolver referencias aunque el destino aparezca después. */
 typedef struct {
     SimboloModelo *modelos;
     size_t cantidad_modelos;
 } TablaSimbolos;
 
-/* Reporta errores de recursos antes de continuar con una tabla incompleta. */
 static void *reservar(size_t tamano) {
     void *memoria = malloc(tamano);
     if (memoria == NULL) {
@@ -28,7 +25,6 @@ static void *reservar(size_t tamano) {
 }
 
 static SimboloModelo *buscar_modelo(TablaSimbolos *tabla, const char *nombre) {
-    /* Búsqueda lineal adecuada para el tamaño acotado de los modelos de entrada. */
     for (size_t indice = 0; indice < tabla->cantidad_modelos; indice++) {
         if (strcmp(tabla->modelos[indice].modelo->nombre, nombre) == 0) {
             return &tabla->modelos[indice];
@@ -38,7 +34,6 @@ static SimboloModelo *buscar_modelo(TablaSimbolos *tabla, const char *nombre) {
 }
 
 static Atributo *buscar_atributo(SimboloModelo *modelo, const char *nombre) {
-    /* Recorre los atributos registrados de un modelo por nombre. */
     for (size_t indice = 0; indice < modelo->cantidad_atributos; indice++) {
         if (strcmp(modelo->atributos[indice]->nombre, nombre) == 0) {
             return modelo->atributos[indice];
@@ -48,7 +43,6 @@ static Atributo *buscar_atributo(SimboloModelo *modelo, const char *nombre) {
 }
 
 static void liberar_tabla(TablaSimbolos *tabla) {
-    /* La tabla posee los arreglos auxiliares, no los nodos originales del AST. */
     for (size_t indice = 0; indice < tabla->cantidad_modelos; indice++) {
         free(tabla->modelos[indice].atributos);
     }
@@ -57,7 +51,6 @@ static void liberar_tabla(TablaSimbolos *tabla) {
 }
 
 static size_t contar_atributos(const ListaAtributos *atributos) {
-    /* Cuenta nodos para reservar exactamente el arreglo de símbolos. */
     size_t cantidad = 0;
     for (Atributo *atributo = atributos->primero; atributo != NULL;
          atributo = atributo->siguiente) {
@@ -67,7 +60,6 @@ static size_t contar_atributos(const ListaAtributos *atributos) {
 }
 
 static bool registrar_modelos(const Esquema *esquema, TablaSimbolos *tabla) {
-    /* Primera pasada: registrar destinos posibles y validar restricciones locales. */
     size_t cantidad = 0;
     for (Modelo *modelo = esquema->primero; modelo != NULL; modelo = modelo->siguiente) {
         cantidad++;
@@ -75,7 +67,6 @@ static bool registrar_modelos(const Esquema *esquema, TablaSimbolos *tabla) {
     tabla->modelos = cantidad == 0 ? NULL : reservar(cantidad * sizeof(*tabla->modelos));
 
     for (Modelo *modelo = esquema->primero; modelo != NULL; modelo = modelo->siguiente) {
-        /* Al completar cada entrada se puede detectar duplicación de tablas. */
         if (buscar_modelo(tabla, modelo->nombre) != NULL) {
             Posicion posicion = modelo->posicion;
             registrar_error(ERROR_SEMANTICO, posicion, true,
@@ -91,7 +82,6 @@ static bool registrar_modelos(const Esquema *esquema, TablaSimbolos *tabla) {
                                  ? NULL
                                  : reservar(total_atributos * sizeof(*simbolo->atributos));
 
-        /* La tabla de atributos permite detectar duplicados y luego resolver las FK. */
         size_t cantidad_claves_primarias = 0;
         for (Atributo *atributo = modelo->atributos.primero; atributo != NULL;
              atributo = atributo->siguiente) {
@@ -133,7 +123,6 @@ static bool registrar_modelos(const Esquema *esquema, TablaSimbolos *tabla) {
 }
 
 static bool validar_claves_foraneas(TablaSimbolos *tabla) {
-    /* Segunda pasada: todas las tablas ya están registradas, incluso las adelantadas. */
     for (size_t indice_modelo = 0; indice_modelo < tabla->cantidad_modelos; indice_modelo++) {
         SimboloModelo *origen = &tabla->modelos[indice_modelo];
         for (size_t indice_atributo = 0;
@@ -145,7 +134,6 @@ static bool validar_claves_foraneas(TablaSimbolos *tabla) {
                 continue;
             }
 
-            /* Una FK solo es válida si existen la tabla y la columna de destino. */
             SimboloModelo *destino = buscar_modelo(tabla, clave->modelo);
             if (destino == NULL) {
                 registrar_error(ERROR_SEMANTICO, clave->posicion, true,
@@ -161,7 +149,6 @@ static bool validar_claves_foraneas(TablaSimbolos *tabla) {
                                 clave->atributo, clave->modelo);
                 return false;
             }
-            /* SQL requiere que la columna referenciada identifique filas de forma única. */
             if (!referenciado->modificadores.clave_primaria &&
                 !referenciado->modificadores.unico) {
                 registrar_error(ERROR_SEMANTICO, clave->posicion, true,
@@ -169,7 +156,6 @@ static bool validar_claves_foraneas(TablaSimbolos *tabla) {
                                 clave->atributo, clave->modelo);
                 return false;
             }
-            /* Ambos extremos deben tener el mismo tipo primitivo en este DSL. */
             if (atributo->tipo != referenciado->tipo) {
                 registrar_error(ERROR_SEMANTICO, clave->posicion, true,
                                 "Tipo incompatible en FK: '%s' (%s) no coincide con '%s.%s' (%s)",
@@ -183,7 +169,6 @@ static bool validar_claves_foraneas(TablaSimbolos *tabla) {
 }
 
 bool analizar_semantica(const Esquema *esquema) {
-    /* La tabla vive solo durante el análisis; el AST se conserva para generar SQL. */
     TablaSimbolos tabla = {0};
     bool valido = registrar_modelos(esquema, &tabla);
     if (valido) {
